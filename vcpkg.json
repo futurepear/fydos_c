@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    "fmt",
+    "gamenetworkingsockets",
+    "glfw3",
+    "glad"
+  ]
+}
