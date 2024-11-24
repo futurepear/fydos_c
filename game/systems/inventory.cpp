@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include <iostream>
+#include "items.hpp"
 
 
 const ItemData& Item::getData() const {
@@ -20,11 +21,16 @@ int Item::getQuantity() const {
 void Item::addQuantity(int amount) {
 	m_quantity += amount;
 }
+const ItemType Item::type() const {
+	return getData().type;
+}
 
 void Inventory::print() {
 	std::cout << "--Hotbar--\n";
 	for (int i = 0; i < 10; i++) {
 		const Item* item = getHotbarItem(i);
+		if (currentSlot == i)
+			std::cout << ">>>";
 		if (item == nullptr) {
 			std::cout << "empty - ";
 		}
@@ -41,7 +47,13 @@ void Inventory::print() {
 }
 
 const Item* Inventory::getHotbarItem(int index) const {
+	if (hotbar[index] == nullptr) {
+
+	}
 	return hotbar[index];
+}
+const Item* Inventory::currentItem() const {
+	return getHotbarItem(currentSlot);
 }
 
 void Inventory::addItem(int id, int quantity) {
@@ -52,10 +64,31 @@ void Inventory::addItem(int id, int quantity) {
 	}
 }
 
-void Inventory::removeItem(int id, int quantity) {
-	storage[id].addQuantity(-quantity);
+void Inventory::addQuantity(int id, int quantity) {
+	storage[id].addQuantity(quantity);
+	if (storage[id].getQuantity() == 0)
+		storage.erase(id);
+}
+
+bool Inventory::removeItem(int id, int quantity) {
+	if (storage.contains(id) && storage[id].getQuantity() >= quantity) {
+		storage[id].addQuantity(-quantity);
+		return true;
+	}
+	return false;
 }
 
 void Inventory::switchSlot(int slot) {
 	currentSlot = std::clamp(slot, 0, 10);
+}
+
+void Inventory::setHotbarItem(int index, int itemID) {
+	hotbar[index] = &storage[itemID];
+}
+int Inventory::slot() {
+	return currentSlot;
+}
+bool Inventory::isCurrentItem(ItemType type) {
+	if (getHotbarItem(currentSlot) == nullptr) return (type == ItemType::EMPTY);
+	return (getHotbarItem(currentSlot)->type() == type);
 }

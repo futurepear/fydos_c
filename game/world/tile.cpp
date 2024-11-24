@@ -73,8 +73,8 @@ Vector<>* Tile::getPhysicsGeometry() {
 	for (int i = 0; i < size; i++) {
 		physicsGeometry[i].x = geo[i].x * cos - geo[i].y * sin;
 		physicsGeometry[i].y = geo[i].x * sin + geo[i].y * cos;
-		physicsGeometry[i].x *= Constants::tileWidth;
-		physicsGeometry[i].y *= Constants::tileWidth;
+		physicsGeometry[i].x *= 1;// Constants::tileWidth;
+		physicsGeometry[i].y *= 1;// Constants::tileWidth;
 	}
 	return physicsGeometry;
 }

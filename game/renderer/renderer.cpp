@@ -49,16 +49,18 @@ GLFWwindow* renderer::createWindow() {
 		return nullptr;
 	}
 	glfwMakeContextCurrent(window);
-	//glfwSwapInterval(1);
+	glfwSwapInterval(1);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return nullptr;
 	}
 
-	framebuffer_size_callback(window, 500, 500);
-
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	framebuffer_size_callback(window, width, height);
 
 	return window;
 }
@@ -69,7 +71,7 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 
 	float dimensions[] = { 0.0f, 0.0f };
 	screenDimensions(window, dimensions[0], dimensions[1]);
-	float scale = game.getScale();
+	float scale = game.getScale() * 100.0f;
 	float now = static_cast<float>(glfwGetTime());
 	game.updateScreenSize(dimensions[0], dimensions[1]);
 
@@ -99,15 +101,18 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 			glm::mat3 tilePosition{};
 			Chunk& chunk = game.chunks.getChunk(key);
 
+			int layer = 2;
+
 			for (int i = 0; i < Chunk::chunkLength; i++) {
 				float color[]{ 1.0, 1.0, 0.0, 1.0 };
-				if (chunk[i].id() == 0) { color[0] = 0.2f; color[1] = 0.31f; color[2] = 0.51f; }
-				if (chunk[i].id() == 1) { color[0] = 0.5f; color[1] = 0.5f; color[2] = 0.5f; }
+				if (chunk[layer][i].id() == 0) { color[0] = 0.2f; color[1] = 0.31f; color[2] = 0.51f; }
+				if (chunk[layer][i].id() == 1) { color[0] = 0.5f; color[1] = 0.5f; color[2] = 0.5f; }
 
-				tilePosition.set(chunk.leftBorder() + chunk[i].x() * 100.0f + Constants::tileWidth / 2, chunk.topBorder() + chunk[i].y() * 100.0f + Constants::tileWidth / 2, -chunk[i].getRotation(), 100.0f, 100.0f);
+				tilePosition.set(chunk.leftBorder() + chunk[layer][i].x() + 0.5f,
+								 chunk.topBorder()  + chunk[layer][i].y() + 0.5f, -chunk[layer][i].getRotation(), 1.0f, 1.0f);
 				RenderState.setTransform(tilePosition);
 
-				int type = chunk[i].geometryType();
+				int type = chunk[layer][i].geometryType();
 				glUniform4fv(colorLoc, 1, color);
 				//RenderState.basicGeometry[type].start, RenderState.basicGeometry[type].length
 				DrawArraysIndirectCommand* cmd = new DrawArraysIndirectCommand{ (unsigned int)RenderState.basicGeometry[type].length, 1, (unsigned int)RenderState.basicGeometry[type].start, 0 };
@@ -126,7 +131,7 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 		glm::mat3 playerTransform{};
 		for (const auto& [key, value] : game.players) {
 			auto position = &game.players[key]->body->position;
-			playerTransform.set(position->x, position->y, 0.0f, 100.0f, 100.0f);
+			playerTransform.set(position->x, position->y, 0.0f, 1.0f, 1.0f);
 			RenderState.setTransform(playerTransform);
 
 			float color[]{ 1.0, 1.0, 0.0, 1.0 };
@@ -136,19 +141,30 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 			auto bruh = game.players[key]->body->getAABB();
 			float color2[]{ 1.0, 0.0, 0.0, 0.4 };
 			glUniform4fv(colorLoc, 1, color2);
-			playerTransform.set(bruh.min.x, bruh.min.y, 0.0f, 5.0f, 5.0f);
+			playerTransform.set(bruh.min.x, bruh.min.y, 0.0f, 0.05f, 0.05f);
 			RenderState.setTransform(playerTransform);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, RenderState.geometry["box"].size);
 
-			playerTransform.set(bruh.max.x, bruh.max.y, 0.0f, 5.0f, 5.0f);
+			playerTransform.set(bruh.max.x, bruh.max.y, 0.0f, 0.05f, 0.05f);
 			RenderState.setTransform(playerTransform);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, RenderState.geometry["box"].size);
+
+			//DRAWING THE WEAPON!!
+			Usable<>& item = *game.players[key]->item;
+
+			float weaponcolor[]{ 0.0, 1.0, 0.0, 1.0 };
+			glUniform4fv(colorLoc, 1, weaponcolor);
+			auto pos = item.position();
+			playerTransform.set(pos.x, pos.y, item.angle(), 0.1f, 0.4f);
+			RenderState.setTransform(playerTransform);
+
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, RenderState.geometry["box"].size);
 		}
 	}
 
 	{
 		glm::mat3 cursorMatrix{};
-		cursorMatrix.set(std::floor((float)game.cursorX() / 100.0f) * 100.0f, std::floor((float)game.cursorY() / 100.0f) * 100.0f, 0, 100, 100);
+		cursorMatrix.set(std::floor((float)game.cursorX() / 100.0f), std::floor((float)game.cursorY() / 100.0f), 0, 1, 1);
 		RenderState.setTransform(cursorMatrix);
 		float color[]{ 1.0, 0.0, 0.0, 0.3 };
 		glUniform4fv(colorLoc, 1, color);

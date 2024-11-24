@@ -38,7 +38,7 @@ public:
 
 	Game() {
 		m_quit = false;
-		chunks[{0, 0}];
+
 	}
 	~Game() {
 		for (const auto & [key, value] : players) {
@@ -59,6 +59,7 @@ public:
 	Player* addPlayer(const char* id);
 	void lockCamera(const char* id);
 	void setYou(const char* id);
+	bool placeBlock(Player* entity, Vector<float> mouse);
 	
 	void tileBroadPhase(Player* entity);
 	void update(float time);

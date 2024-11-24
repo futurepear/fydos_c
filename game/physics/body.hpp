@@ -40,9 +40,9 @@ public:
 	T staticFriction = 1;
 	T kineticFriction = 1;
 
-	T radius = 50;
-	T width = 100;
-	T height = 100;
+	T radius = 0.5;
+	T width = 1;
+	T height = 1;
 
 	Body();
 	~Body();

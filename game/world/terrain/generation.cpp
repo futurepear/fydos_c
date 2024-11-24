@@ -48,9 +48,9 @@ static float fbm(Vector<float> st) {
 
 void generateChunk(Chunk& chunk) {
 	for (int i = 0; i < Constants::chunkSize * Constants::chunkSize; i++) {
-		Vector<float> st = { (float)chunk[i].x() + chunk.leftBorder() / Constants::tileWidth, (float)chunk[i].y() + chunk.topBorder() / Constants::tileWidth };
+		Vector<float> st = { (float)chunk[2][i].x() + chunk.leftBorder() / Constants::tileWidth, (float)chunk[2][i].y() + chunk.topBorder() / Constants::tileWidth };
 		float value = fbm(st * 0.2f);
 		if (value > 0.5)
-			chunk[i].setTile(1);
+			chunk[2][i].setTile(1);
 	}
 }

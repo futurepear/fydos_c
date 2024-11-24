@@ -23,9 +23,17 @@ public:
 		createChunk({ 0, -1 });
 		createChunk({ -1, -1 });
 		createChunk({ -1, 0 });
+		createChunk({ -2, -2 });
+		createChunk({ -2, -1 });
+
 	}
 	void createChunk(Vector<int> location) {
-		chunks[location] = Chunk{ location.x * Constants::chunkSize * Constants::tileWidth, location.y * Constants::chunkSize * Constants::tileWidth };
+		chunks[location] = Chunk{ location.x * Constants::chunkSize, location.y * Constants::chunkSize };
+	}
+	void printActive() {
+		for (const auto& [key, value] : chunks) {
+			std::cout << chunks.hash_function()(key) << "\n";
+		}
 	}
 	~ChunkManager(){}
 	Chunk& getChunk(const Vector<int>& index){
@@ -38,8 +46,8 @@ public:
 		return getChunk(index);
 	}
 	template <typename T> Vector<int> chunkSpace(const Vector<T>& vector) const {
-		T x = vector.x / (Constants::chunkSize * Constants::tileWidth);
-		T y = vector.y / (Constants::chunkSize * Constants::tileWidth);
+		T x = vector.x / (Constants::chunkSize);
+		T y = vector.y / (Constants::chunkSize);
 		return Vector<int>{ (int)std::floor(x), (int)std::floor(y) };
 	}
 	template <typename T> Chunk& vectorToChunk(const Vector<T>& vector) {

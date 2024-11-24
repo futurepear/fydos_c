@@ -11,4 +11,6 @@ struct InputMap {
 	bool mouseDown = false;
 	int mouseX = 0;
 	int mouseY = 0;
+
+	int hotbar = 0;
 };

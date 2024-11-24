@@ -16,13 +16,13 @@ float Game::getScale() {
 	return windowSize.x / 1920 * scale;
 }
 double Game::cursorX() {
-	return (cursor.x - windowSize.x / 2) / getScale() + camera.x;
+	return (cursor.x - windowSize.x / 2) / (getScale()) + camera.x * Constants::tileWidth;
 }
 double Game::cursorY() {
-	return (cursor.y - windowSize.y / 2) / getScale() + camera.y;
+	return (cursor.y - windowSize.y / 2) / (getScale()) + camera.y * Constants::tileWidth;
 }
 Vector<double> Game::cursorWorldPosition() {
-	return Vector<double>{cursorX(), cursorY()};
+	return Vector<double>{cursorX()/Constants::tileWidth, cursorY()/Constants::tileWidth};
 }
 Vector<double> Game::getCursorPosition() {
 	return cursor;
@@ -53,10 +53,9 @@ void Game::setYou(const char* id) {
 void Game::tileNarrowPhase(Player* entity, Tile& tile, Chunk& parentChunk) {
 	Body<> tileBody{};
 	tileBody.setStatic(true);
-	tileBody.setPosition(parentChunk.leftBorder() + tile.x() * Constants::tileWidth + Constants::tileWidth / 2, parentChunk.topBorder() + tile.y() * Constants::tileWidth + Constants::tileWidth / 2);
+	tileBody.setPosition(parentChunk.leftBorder() + tile.x() * 1 + 0.5f, parentChunk.topBorder() + tile.y() * 1 + 0.5f);
 	int size = tile.geometrySize();
 	tileBody.setVertices(tile.getPhysicsGeometry(), size);
-
 
 	world.collide(*(entity->body), tileBody);
 }
@@ -77,9 +76,9 @@ void Game::tileBroadPhaseInner(Player* entity, Chunk& chunk) {
 			if (x >= Constants::chunkSize || y >= Constants::chunkSize) continue;
 
 			int index = x + y * Constants::chunkSize;
-			Tile& tile = chunk[index];
-			if (chunk[index].solid()) {
-				tileNarrowPhase(entity, chunk[index], chunk);
+			Tile& tile = chunk[2][index];
+			if (chunk[2][index].solid()) {
+				tileNarrowPhase(entity, chunk[2][index], chunk);
 			}
 		}
 	}
@@ -106,7 +105,13 @@ void Game::update(float time) {
 	world.collide(*(players["me"]->body), *(players["you"]->body));
 
 	for (const auto& [key, value] : players) {
+		
+		players[key]->item->update(players[key]->mouse(), chunks);
+
+		players[key]->body->step(1.0/60.0);
 		tileBroadPhase(players[key]);
+		
+		players[key]->update();
 	}
 
 	//camera after all positions are resolved
@@ -114,18 +119,71 @@ void Game::update(float time) {
 		camera.x = cameraTarget->body->position.x;
 		camera.y = cameraTarget->body->position.y;
 	}
-
-
 }
 
 void Game::applyInput(Player* player, InputMap& input) {
+	//convert input to be usable
+	//change mouse to world space
+	const Vector<float> mouse{ (float)input.mouseX / Constants::tileWidth + player->body->position.x, (float)input.mouseY / Constants::tileWidth + player->body->position.y };
+
+	//TODO: better movement
 	Vector<float> displacement{};
 
-	float v = 5.0f;
+	float v = 2.0 / 60.0f;
 	displacement.x = int(input.A) * -1 + int(input.D);
 	displacement.y = int(input.W) * -1 + int(input.S);
 
-	player->body->move(Vector<float>::normalize(displacement) * v);
+	bool isRunning = input.A || input.W || input.D || input.S;
+	bool isStill = player->body->velocity.lengthSquared() < 0.1;
+	//isStill = true;
+
+	displacement = Vector<float>::normalize(displacement);
+	Vector<float> vN = Vector<float>::normalize(player->body->velocity);
+
+	Vector<float> force = { displacement.x * v - (0.2f * player->body->velocity.x + 200.0f * 1 * 9.8f * vN.x * !isRunning) * !isStill,
+						   displacement.y * v - (0.2f * player->body->velocity.y + 200.0f * 1 * 9.8f * vN.y * !isRunning) * !isStill
+						  };
+
+	
+	player->body->move(displacement * v);
+	//player->body->applyForce(force);
+	//END TODO
+
+	//switching items
+	if (player->inventory.slot() != input.hotbar) {
+		player->switchHotbarSlot(input.hotbar);
+	}
+	//end switching items
+	
+	if (input.mouseDown && player->inventory.isCurrentItem(ItemType::BLOCK)) {
+		placeBlock(player, mouse);
+	}
+	
+	if (input.mouseDown && player->inventory.isCurrentItem(ItemType::WEAPON)) {
+		player->item->use();
+	}
+
+	player->addInput(input);
+}
+
+bool Game::placeBlock(Player* entity, Vector<float> mouse) {
+	Chunk& chunk = chunks.vectorToChunk(mouse);
+	if (chunks.isInvalid(chunk)) return false;
+	int loc = chunk.positionToLocation(mouse.x, mouse.y);
+	
+	//not empty space OR cant place OR invalid block
+	if (!chunk[2][loc].isAir() || !entity->item->canUse() || loc == -1) return false;
+	
+	auto itemData = entity->inventory.currentItem()->getData();
+	bool hasItems = entity->inventory.removeItem(itemData.id, 1);
+
+	if (!hasItems) return false;
+
+	entity->item->use();
+
+	chunk[2][loc].setTile(1);
+
+	return true;
 }
 
 void Game::processLocalInput(GLFWwindow* window) {
@@ -143,6 +201,11 @@ void Game::processLocalInput(GLFWwindow* window) {
 	input.D = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
 	input.R = (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS);
 	input.M = (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS);
+	input.mouseDown = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
+
+	//todo change camera to 'you'
+	input.mouseX = (int)cursorX() - camera.x * Constants::tileWidth;
+	input.mouseY = (int)cursorY() - camera.y * Constants::tileWidth;
 
 	if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
 		scale += 0.02f;
@@ -156,40 +219,30 @@ void Game::processLocalInput(GLFWwindow* window) {
 			generateChunk(chunk);
 		}
 
-		//place block
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			int loc = chunk.positionToLocation((int)cursorX(), (int)cursorY());
-			if (loc != -1)
-				chunk[loc].setTile(1);
-		}
-
-		//mine block
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-			int loc = chunk.positionToLocation((int)cursorX(), (int)cursorY());
-			if (loc != -1)
-				chunk[loc].setTile(0);
-		}
-
 		//rotate block
 		if (input.R && !localInput.R) {
-			int loc = chunk.positionToLocation((int)cursorX(), (int)cursorY());
+			int loc = chunk.positionToLocation(std::floor(cursorX()/Constants::tileWidth), std::floor(cursorY() / Constants::tileWidth));
 			if (loc != -1)
-				chunk[loc].rotate();
+				chunk[2][loc].rotate();
 		}
 
 		//?
 		if (input.M && !localInput.M) {
-			int loc = chunk.positionToLocation((int)cursorX(), (int)cursorY());
+			int loc = chunk.positionToLocation(std::floor(cursorX() / Constants::tileWidth), std::floor(cursorY() / Constants::tileWidth));
 			if (loc != -1)
-				chunk[loc].TEST();
+				chunk[2][loc].TEST();
 		}
 	} else {
 		//temp code lol
-		chunks.createChunk(chunks.chunkSpace(cursorWorldPosition()));
+		auto a = chunks.chunkSpace(cursorWorldPosition());
+		//chunks.createChunk(a);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
 		players["me"]->body->position.print();
+		std::cout << "chunks--\n";
+		chunks.printActive();
+		std::cout << "---\n";
 	}
 	if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
 		players["me"]->body->position.x = 49.98f;
@@ -199,6 +252,17 @@ void Game::processLocalInput(GLFWwindow* window) {
 	}
 
 	if (you != nullptr) {
+		//hotbar
+		int hotbarSlot = you->inventory.slot();
+		for (int i = 49; i <= 57; i++) {
+			int slot = i - 49;
+			if (glfwGetKey(window, i) == GLFW_PRESS) {
+				hotbarSlot = slot;
+			}
+		}
+
+		input.hotbar = hotbarSlot;
+
 		applyInput(you, input);
 	}
 	localInput = input;

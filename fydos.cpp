@@ -32,18 +32,20 @@ void initGame() {
 	
 	game.addPlayer("me");
 	game.addPlayer("you");
-	game.lockCamera("you");
+	game.lockCamera("me");
 	game.setYou("me");
-	game.players["you"]->body->position.x = 200;
+	game.players["you"]->body->position.x = 2;
 	game.players["me"]->body->makeCircle();
 
-	game.players["me"]->inventory.addItem(1, 10);
+	game.players["me"]->inventory.addItem(1, 1000);
+	game.players["me"]->inventory.addItem(3, 1);
+	game.players["me"]->inventory.setHotbarItem(1, 3);
+	game.players["me"]->inventory.setHotbarItem(0, 1);
+	game.players["me"]->initializeHand();
 
 	renderer::setupRenderer(RenderState);
 
 	float time = static_cast<float>(glfwGetTime()); //in seconds
-	Animation<> test{ {0, 0, 3}, {10, 1, 3}, {40, 2, 3}, {0, 3, 1} };
-	AnimationDiscrete<> test2{ {0, 0, 1}, {100, 60, 1}, {30, 120, 1}, {0, 180, 1} };
 
 
 	////main game loop
@@ -54,8 +56,6 @@ void initGame() {
 		game.processLocalInput(window);
 		game.update(time);		
 
-		//test2.update();
-		//game.players["me"]->body->position.x = test2.value();
 		
 		renderer::render(game, RenderState, window);
 

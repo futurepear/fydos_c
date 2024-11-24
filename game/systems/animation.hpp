@@ -82,17 +82,25 @@ public:
 	AnimationDiscrete(std::initializer_list<KeyframeDiscrete<T>> k) {
 		keyframes.insert(keyframes.end(), k.begin(), k.end());
 		m_end = keyframes[keyframes.size() - 1].tick;
+		m_tick = m_end;
 	}
 	void start(int time = 0) {
 		m_tick = time;
 	}
+	int length() const {
+		return m_end;
+	}
 	void update() {
+		if (!m_loop && m_tick >= m_end) {
+			return;
+		}
+
 		m_tick++;
-		m_tick = m_tick % m_end;
+		int tickc = m_tick % m_end;
 
 		int &i = m_currentFrame; //ease of access
 		while (true) {
-			if (keyframes[i].tick <= m_tick && m_tick < keyframes[i + 1].tick) {
+			if (keyframes[i].tick <= tickc && tickc < keyframes[i + 1].tick) {
 				break;
 			} else {
 				i = (i + 1) % (keyframes.size() - 1);
@@ -101,9 +109,12 @@ public:
 	}
 	T value() {
 		KeyframeDiscrete<T>& a = keyframes[m_currentFrame]; //current frame
-		KeyframeDiscrete<T> &b = keyframes[m_currentFrame+1]; //next frame
+		if (keyframes.size() == 1)
+			return a.value;
 
-		float f = (m_tick - a.tick) / float(b.tick - a.tick);
+		KeyframeDiscrete<T> &b = keyframes[(m_currentFrame+1)]; //next frame
+
+		float f = ((m_tick % m_end) - a.tick) / float(b.tick - a.tick);
 
 		switch (b.interpolation) {
 		case 0:

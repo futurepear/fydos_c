@@ -35,9 +35,9 @@ glm::mat3& glm::mat3::set(float x, float y, float rad, float scaleX, float scale
 	float c = cos(rad);
 	float s = sin(rad);
 	matrix[0] = scaleX * c;
-	matrix[1] = scaleY * s;
+	matrix[1] = -scaleY * s;
 	matrix[2] = x;
-	matrix[3] = -scaleX * s;
+	matrix[3] = scaleX * s;
 	matrix[4] = scaleY * c;
 	matrix[5] = y;
 	return *this;

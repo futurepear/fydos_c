@@ -11,7 +11,12 @@ class Player;
 
 class Chunk {
 private:
+
+	Tile biome[Constants::chunkSize * Constants::chunkSize]{};
+	Tile floor[Constants::chunkSize * Constants::chunkSize]{};
 	Tile tiles[Constants::chunkSize * Constants::chunkSize]{};
+	Tile roof[Constants::chunkSize * Constants::chunkSize]{};
+
 	int baseX = 0;
 	int baseY = 0;
 public:
@@ -20,35 +25,40 @@ public:
 			tiles[i] = Tile{ i, 0 };
 		}
 	}
-	Tile& getTile(int index) {
-		return tiles[index];
+	Tile* getLayer(int layer) {
+		if (layer == 0) return biome;
+		if (layer == 1) return floor;
+		if (layer == 2) return tiles;
+		if (layer == 3) return roof;
 	}
-	Tile& operator[](int index) {
-		return tiles[index];
+	Tile& getTile(int layer, int index) {
+		return getLayer(layer)[index];
 	}
-	int positionToLocation(int x, int y) const {
-		x -= baseX;
-		y -= baseY;
-		int location = Constants::chunkSize * (y / 100) + (x/100);
+	Tile* operator[](int index) {
+		return getLayer(index);
+	}
+	template <typename T> int positionToLocation(T x, T y) const {
+		int x2 = (int)(x-baseX); int y2 = (int)(y-baseY);
+		int location = Constants::chunkSize * (y2) + (x2);
 		if (location < 0 || location >= Chunk::chunkLength) return -1;
 		return location;
 	}
 	template <typename T> Vector<int> tileSpace(const Vector<T> vector) const {
-		T x = (vector.x - baseX) / (Constants::tileWidth);
-		T y = (vector.y - baseY) / (Constants::tileWidth);
+		T x = (vector.x - baseX); // (Constants::tileWidth);
+		T y = (vector.y - baseY); // (Constants::tileWidth);
 		return Vector<int>{ (int)std::floor(x), (int)std::floor(y) };
 	}
 	int leftBorder() {
 		return baseX;
 	}
 	int rightBorder() const {
-		return baseX + 100 * Constants::chunkSize;
+		return baseX + 1 * Constants::chunkSize;
 	}
 	int topBorder() const {
 		return baseY;
 	}
 	int bottomBorder() const {
-		return baseY + 100 * Constants::chunkSize;
+		return baseY + 1 * Constants::chunkSize;
 	}
 	static constexpr int chunkLength = Constants::chunkSize * Constants::chunkSize;
 };

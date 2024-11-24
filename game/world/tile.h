@@ -32,6 +32,7 @@ private:
 
 	int location = 0;
 	int tileID = 0;
+	int health = 100;
 	geometryInfo geometry{ 0, 0 };
 	uint8_t rotation = 0;
 public:
@@ -41,8 +42,17 @@ public:
 	bool solid() {
 		return (tileID == 1);
 	}
+	bool isAir() {
+		return (tileID == 0);
+	}
 	void setTile(int id) {
 		tileID = id;
+	}
+	void damage(int hp) {
+		health -= hp;
+	}
+	int getHealth() {
+		return health;
 	}
 	int x() {
 		return location % Constants::chunkSize;

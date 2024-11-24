@@ -4,27 +4,9 @@
 #include <stdint.h>
 #include <algorithm>
 #include <iostream>
+#include <vector>
+#include "items.hpp"
 
-enum class ItemType {
-	RESOURCE,
-	WEAPON,
-	CONSUMABLE,
-	BLOCK,
-	EQUIPABLE
-};
-
-struct ItemData {
-	int id;
-	const char* name;
-	float weight;
-	ItemType type;
-};
-
-constexpr ItemData itemIndex[3]{ 
-	{0, "empty", 0, ItemType::RESOURCE},
-	{1, "stone", 1, ItemType::BLOCK},
-	{2, "rock", 2, ItemType::RESOURCE}
-};
 
 class Item {
 private:
@@ -40,9 +22,8 @@ public:
 	float weight() const;
 	int getQuantity() const;
 	void addQuantity(int amount);
+	const ItemType type() const;
 };
-
-
 
 class Inventory {
 private:
@@ -50,12 +31,19 @@ private:
 	Item* hotbar[10]{};
 	int currentPage = 0;
 	int currentSlot = 0;
+
+	void addQuantity(int id, int quantity);
 public:
 	Inventory() {}
 	~Inventory() {}
 	void print();
 	const Item* getHotbarItem(int index) const;
+	const Item* currentItem() const;
 	void addItem(int id, int quantity);
-	void removeItem(int id, int quantity);
+	bool removeItem(int id, int quantity);
 	void switchSlot(int slot);
+	void setHotbarItem(int index, int itemID);
+	int slot();
+	bool isCurrentItem(ItemType type);
+
 };
