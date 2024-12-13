@@ -3,11 +3,13 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
+#include <string>
 
 #include "physics/physics.h"
 #include "renderer/renderer.h"
 #include "input/inputMap.h"
 #include <GLFW/glfw3.h>
+#include "systems/utility.h"
 
 #include "world/terrain/generation.h"
 
@@ -73,9 +75,9 @@ void Game::tileBroadPhaseInner(Player* entity, Chunk& chunk) {
 
 	for (int x = min.x; x <= max.x; x++) {
 		for (int y = min.y; y <= max.y; y++) {
-			if (x >= Constants::chunkSize || y >= Constants::chunkSize) continue;
+			if (x >= Constants::chunkWidth || y >= Constants::chunkWidth) continue;
 
-			int index = x + y * Constants::chunkSize;
+			int index = x + y * Constants::chunkWidth;
 			Tile& tile = chunk[2][index];
 			if (chunk[2][index].solid()) {
 				tileNarrowPhase(entity, chunk[2][index], chunk);
@@ -100,6 +102,39 @@ void Game::tileBroadPhase(Player* entity) {
 	}
 }
 
+
+void Game::updateChunk(Chunk& chunk, float time) {
+	for (int i = 0; i < Constants::chunkLayerSize; i++) {
+		//X layer block broke?
+		if (chunk.tiles[i].broken()) {
+			//give items
+			const BlockData& data = chunk.tiles[i].getData();
+
+			for (int i = 0; i < data.drops.size(); i++) {
+				int result = pollDropAmount(data.drops[i]);
+				int target = data.drops[i].target;
+
+				//FIx dis later!
+				players["me"]->inventory.addItem(target, result);
+			}
+
+			chunk.tiles[i].setTile(0);
+		}
+	}
+}
+
+void Game::updateChunks(float time) {
+	/*checks for:
+		-broken block
+		-blocks that grow
+		-blocks that change over time
+	*/
+
+	for (const auto& [key, chunk] : chunks.chunks) {
+		updateChunk(chunks[key], time);
+	}
+}
+
 void Game::update(float time) {
 	//update physics
 	world.collide(*(players["me"]->body), *(players["you"]->body));
@@ -113,6 +148,8 @@ void Game::update(float time) {
 		
 		players[key]->update();
 	}
+
+	updateChunks(time);
 
 	//camera after all positions are resolved
 	if (cameraTarget != nullptr) {
@@ -195,6 +232,26 @@ void Game::processLocalInput(GLFWwindow* window) {
 		glfwSetWindowShouldClose(window, true);
 	}
 
+	//chat & commands
+	if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS){
+		if(chatBuffer.length() > 0)
+			chatBuffer.pop_back();
+		std::cout << chatBuffer << "\n";
+	}
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+		std::cout << chatBuffer << "\n";
+		if (chatBuffer == "/craft") {
+			players["me"]->craft(0);
+		}
+		chatBuffer = "";
+	}
+	if (chatBuffer.length() > 0) {
+		return;
+	}
+	if (glfwGetKey(window, GLFW_KEY_SLASH) == GLFW_PRESS)
+		chatBuffer += "/";
+	//end chat & commands
+
 	input.W = (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS);
 	input.A = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS);
 	input.S = (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS);
@@ -266,4 +323,10 @@ void Game::processLocalInput(GLFWwindow* window) {
 		applyInput(you, input);
 	}
 	localInput = input;
+}
+
+void Game::processChatInputCallback(unsigned int codepoint) {
+	if (chatBuffer.length() == 0) return;
+	chatBuffer += (char)codepoint;
+	std::cout << chatBuffer << "\n";
 }

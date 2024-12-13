@@ -3,6 +3,8 @@
 #include "../../physics/vector.h"
 #include "../../constants.h";
 #include "../chunk.h";
+#include <stdlib.h> 
+
 
 static float fract(float x) {
 	return x - std::floor(x);
@@ -47,10 +49,40 @@ static float fbm(Vector<float> st) {
 }
 
 void generateChunk(Chunk& chunk) {
-	for (int i = 0; i < Constants::chunkSize * Constants::chunkSize; i++) {
-		Vector<float> st = { (float)chunk[2][i].x() + chunk.leftBorder() / Constants::tileWidth, (float)chunk[2][i].y() + chunk.topBorder() / Constants::tileWidth };
+	//tree
+	int max = Constants::chunkWidth * Constants::chunkWidth;
+
+	for (int i = 0; i < 10; i++) {
+		std::srand(i * 942134899123 + 1237824214 + chunk.leftBorder() * 1123 + chunk.topBorder() * 23148);
+		float r = std::rand() / (float)RAND_MAX;
+		int index = r * max;
+		chunk[2][index].setTile(5);
+	}
+
+	//rock
+	for (int i = 0; i < Constants::chunkWidth * Constants::chunkWidth; i++) {
+		Vector<float> st = { (float)chunk[2][i].x() + chunk.leftBorder(), (float)chunk[2][i].y() + chunk.topBorder() };
 		float value = fbm(st * 0.2f);
 		if (value > 0.5)
 			chunk[2][i].setTile(1);
 	}
+
+	//ranodm shii
+
+	chunk[2][0].setTile(3);
+	chunk[2][1].setTile(3);
+	chunk[2][2].setTile(4);
+	chunk[2][3].setTile(4);
+
+
+	chunk[2][16].setTile(6);
+	chunk[2][17].setTile(6);
+	chunk[2][18].setTile(6);
+	chunk[2][32].setTile(6);
+	chunk[2][33].setTile(6);
+
+	chunk[0][max / 2].setTile(10);
+	chunk[0][max / 2 + 1].setTile(10);
+	chunk[0][max / 2 + 16].setTile(10);
+	chunk[0][max / 2 + 17].setTile(10);
 }

@@ -11,17 +11,17 @@ class Player;
 
 class Chunk {
 private:
-
-	Tile biome[Constants::chunkSize * Constants::chunkSize]{};
-	Tile floor[Constants::chunkSize * Constants::chunkSize]{};
-	Tile tiles[Constants::chunkSize * Constants::chunkSize]{};
-	Tile roof[Constants::chunkSize * Constants::chunkSize]{};
-
 	int baseX = 0;
 	int baseY = 0;
 public:
+	Tile biome[Constants::chunkWidth * Constants::chunkWidth]{};
+	Tile floor[Constants::chunkWidth * Constants::chunkWidth]{};
+	Tile tiles[Constants::chunkWidth * Constants::chunkWidth]{};
+	Tile roof[Constants::chunkWidth * Constants::chunkWidth]{};
+
 	Chunk(int x = 0, int y = 0) : baseX{ x }, baseY{ y } {
-		for (int i = 0; i < Constants::chunkSize * Constants::chunkSize; i++) {
+		for (int i = 0; i < Constants::chunkWidth * Constants::chunkWidth; i++) {
+			biome[i] = Tile{ i, 2 };
 			tiles[i] = Tile{ i, 0 };
 		}
 	}
@@ -30,6 +30,7 @@ public:
 		if (layer == 1) return floor;
 		if (layer == 2) return tiles;
 		if (layer == 3) return roof;
+		return tiles;
 	}
 	Tile& getTile(int layer, int index) {
 		return getLayer(layer)[index];
@@ -39,7 +40,7 @@ public:
 	}
 	template <typename T> int positionToLocation(T x, T y) const {
 		int x2 = (int)(x-baseX); int y2 = (int)(y-baseY);
-		int location = Constants::chunkSize * (y2) + (x2);
+		int location = Constants::chunkWidth * (y2) + (x2);
 		if (location < 0 || location >= Chunk::chunkLength) return -1;
 		return location;
 	}
@@ -52,13 +53,13 @@ public:
 		return baseX;
 	}
 	int rightBorder() const {
-		return baseX + 1 * Constants::chunkSize;
+		return baseX + 1 * Constants::chunkWidth;
 	}
 	int topBorder() const {
 		return baseY;
 	}
 	int bottomBorder() const {
-		return baseY + 1 * Constants::chunkSize;
+		return baseY + 1 * Constants::chunkWidth;
 	}
-	static constexpr int chunkLength = Constants::chunkSize * Constants::chunkSize;
+	static constexpr int chunkLength = Constants::chunkWidth * Constants::chunkWidth;
 };

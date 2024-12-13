@@ -1,6 +1,7 @@
 #pragma once	
 #include "../constants.h"
 #include "../physics/vector.h"
+#include "../systems/dictionary.h"
 #include <stdint.h>
 #include <vector>
 #include <cmath>
@@ -40,31 +41,42 @@ public:
 
 	}
 	bool solid() {
-		return (tileID == 1);
+		return !isAir();
 	}
 	bool isAir() {
 		return (tileID == 0);
 	}
+	const BlockData& getData() {
+		return Dictionary::blocks[tileID];
+	}
 	void setTile(int id) {
 		tileID = id;
+		const BlockData& data = getData();
+		health = data.hp;
+
+	}
+	bool broken() {
+		return (health <= 0);
 	}
 	void damage(int hp) {
+		if (isAir()) return;
 		health -= hp;
+		//if (health <= 0) setTile(0);
 	}
 	int getHealth() {
 		return health;
 	}
 	int x() {
-		return location % Constants::chunkSize;
+		return location % Constants::chunkWidth;
 	}
 	int y() {
-		return location / Constants::chunkSize;
+		return location / Constants::chunkWidth;
 	}
 	static int x(int location) {
-		return location % Constants::chunkSize;
+		return location % Constants::chunkWidth;
 	}
 	static int y(int location) {
-		return location / Constants::chunkSize;
+		return location / Constants::chunkWidth;
 	}
 	int id() {
 		return tileID;

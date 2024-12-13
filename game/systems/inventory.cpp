@@ -3,11 +3,10 @@
 #include <stdint.h>
 #include <algorithm>
 #include <iostream>
-#include "items.hpp"
-
+#include "dictionary.h"
 
 const ItemData& Item::getData() const {
-	return itemIndex[m_id];
+	return Dictionary::items[m_id];
 }
 const char* Item::getName() const {
 	return getData().name;
@@ -23,6 +22,30 @@ void Item::addQuantity(int amount) {
 }
 const ItemType Item::type() const {
 	return getData().type;
+}
+
+
+//repetitive code i honestly dont care	
+void ItemStorage::addItem(int id, int quantity) {
+	if (quantity == 0) return;
+	if (storage.contains(id)) {
+		storage[id].addQuantity(quantity);
+	}else {
+		storage[id] = Item{ id, quantity };
+	}
+}
+void ItemStorage::addQuantity(int id, int quantity) {
+	storage[id].addQuantity(quantity);
+	if (storage[id].getQuantity() == 0)
+		storage.erase(id);
+}
+
+bool ItemStorage::removeItem(int id, int quantity) {
+	if (storage.contains(id) && storage[id].getQuantity() >= quantity) {
+		storage[id].addQuantity(-quantity);
+		return true;
+	}
+	return false;
 }
 
 void Inventory::print() {
@@ -46,6 +69,7 @@ void Inventory::print() {
 	std::cout << "-----------\n\n\n";
 }
 
+
 const Item* Inventory::getHotbarItem(int index) const {
 	if (hotbar[index] == nullptr) {
 
@@ -54,28 +78,6 @@ const Item* Inventory::getHotbarItem(int index) const {
 }
 const Item* Inventory::currentItem() const {
 	return getHotbarItem(currentSlot);
-}
-
-void Inventory::addItem(int id, int quantity) {
-	if (storage.contains(id)) {
-		storage[id].addQuantity(quantity);
-	} else {
-		storage[id] = Item{ id, quantity };
-	}
-}
-
-void Inventory::addQuantity(int id, int quantity) {
-	storage[id].addQuantity(quantity);
-	if (storage[id].getQuantity() == 0)
-		storage.erase(id);
-}
-
-bool Inventory::removeItem(int id, int quantity) {
-	if (storage.contains(id) && storage[id].getQuantity() >= quantity) {
-		storage[id].addQuantity(-quantity);
-		return true;
-	}
-	return false;
 }
 
 void Inventory::switchSlot(int slot) {

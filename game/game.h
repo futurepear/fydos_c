@@ -9,6 +9,7 @@
 #include "input/inputMap.h"
 #include "world/chunkManager.h"
 #include <vector>
+#include <string>
 
 void initGame();
 
@@ -26,6 +27,7 @@ private:
 	Player* cameraTarget = nullptr;
 	Player* you = nullptr;
 	InputMap localInput{};
+	std::string chatBuffer{};
 
 	void tileNarrowPhase(Player* entity, Tile& tile, Chunk& parentChunk);
 	void tileBroadPhaseInner(Player* entity, Chunk& chunk);
@@ -62,7 +64,10 @@ public:
 	bool placeBlock(Player* entity, Vector<float> mouse);
 	
 	void tileBroadPhase(Player* entity);
+	void updateChunk(Chunk& chunk, float time);
+	void updateChunks(float time);
 	void update(float time);
 	void applyInput(Player* player, InputMap& input);
 	void processLocalInput(GLFWwindow* window);
+	void processChatInputCallback(unsigned int codepoint);
 };

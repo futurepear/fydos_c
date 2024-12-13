@@ -101,26 +101,30 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 			glm::mat3 tilePosition{};
 			Chunk& chunk = game.chunks.getChunk(key);
 
-			int layer = 2;
+			for (int layer = 0; layer < 4; layer++) {
+				for (int i = 0; i < Chunk::chunkLength; i++) {
+					if (chunk[layer][i].isAir()) continue;
+					float color[]{ 1.0, 1.0, 0.0, 1.0 };
+					const BlockData& data = chunk[layer][i].getData();
+					color[0] = data.color.r / 255.0f;
+					color[1] = data.color.g / 255.0f;
+					color[2] = data.color.b / 255.0f;
 
-			for (int i = 0; i < Chunk::chunkLength; i++) {
-				float color[]{ 1.0, 1.0, 0.0, 1.0 };
-				if (chunk[layer][i].id() == 0) { color[0] = 0.2f; color[1] = 0.31f; color[2] = 0.51f; }
-				if (chunk[layer][i].id() == 1) { color[0] = 0.5f; color[1] = 0.5f; color[2] = 0.5f; }
+					tilePosition.set(chunk.leftBorder() + chunk[layer][i].x() + 0.5f,
+						chunk.topBorder() + chunk[layer][i].y() + 0.5f, -chunk[layer][i].getRotation(), 1.0f, 1.0f);
+					RenderState.setTransform(tilePosition);
 
-				tilePosition.set(chunk.leftBorder() + chunk[layer][i].x() + 0.5f,
-								 chunk.topBorder()  + chunk[layer][i].y() + 0.5f, -chunk[layer][i].getRotation(), 1.0f, 1.0f);
-				RenderState.setTransform(tilePosition);
-
-				int type = chunk[layer][i].geometryType();
-				glUniform4fv(colorLoc, 1, color);
-				//RenderState.basicGeometry[type].start, RenderState.basicGeometry[type].length
-				DrawArraysIndirectCommand* cmd = new DrawArraysIndirectCommand{ (unsigned int)RenderState.basicGeometry[type].length, 1, (unsigned int)RenderState.basicGeometry[type].start, 0 };
-				//glDrawArraysIndirect(GL_TRIANGLES, cmd);
-				//glDrawArraysInstancedBaseInstance(GL_TRIANGLES, cmd->first, cmd->count, cmd->instanceCount, cmd->baseInstance);
-				glDrawArrays(GL_TRIANGLES, cmd->first, cmd->count);
-				delete cmd;
+					int type = chunk[layer][i].geometryType();
+					glUniform4fv(colorLoc, 1, color);
+					//RenderState.basicGeometry[type].start, RenderState.basicGeometry[type].length
+					DrawArraysIndirectCommand* cmd = new DrawArraysIndirectCommand{ (unsigned int)RenderState.basicGeometry[type].length, 1, (unsigned int)RenderState.basicGeometry[type].start, 0 };
+					//glDrawArraysIndirect(GL_TRIANGLES, cmd);
+					//glDrawArraysInstancedBaseInstance(GL_TRIANGLES, cmd->first, cmd->count, cmd->instanceCount, cmd->baseInstance);
+					glDrawArrays(GL_TRIANGLES, cmd->first, cmd->count);
+					delete cmd;
+				}
 			}
+
 		}
 	}
 

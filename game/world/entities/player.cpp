@@ -1,12 +1,13 @@
 #include "player.h"
 #include "../../physics/physics.h"
 #include "../../systems/inventory.h"
+#include "../../systems/crafting.h"
 #include <cmath>
 
 Player::Player(const char* playerID) {
 	body = new Body<float>{};
 	id = playerID;
-	item = new Pickaxe<>{body->position};
+	initializeHand();
 }
 
 Player::~Player() {
@@ -21,6 +22,8 @@ Vector<float>& Player::position() {
 void Player::update() {
 	item->setFacing(facing());
 	item->updatePivot(body->position);
+
+	updateCrafting();
 }
 
 const Vector<float> Player::mouse(){
@@ -59,4 +62,20 @@ void Player::setItem(ItemType type) {
 		default:
 			item = new Hand<>{ body->position };
 	}
+}
+
+void Player::updateCrafting() {
+	if (craftingQueue.empty()) return;
+	CraftCommand& cmd = craftingQueue.front();
+	
+	updateCraftCommand(cmd, &inventory, &inventory);
+	if (cmd.done) {
+		if (cmd.success)
+			std::cout << "success";
+		craftingQueue.pop();
+	}
+}
+
+void Player::craft(int recipeID) {
+	craftingQueue.push(createCraftCommand(recipeID));
 }

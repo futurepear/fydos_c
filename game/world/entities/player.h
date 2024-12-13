@@ -2,7 +2,9 @@
 #include "../../physics/physics.h"
 #include "../../systems/inventory.h"
 #include "../../input/inputMap.h"
+#include "../../systems/crafting.h"
 #include "weapon.h"
+#include <queue>
 
 class Player {
 private:
@@ -10,8 +12,11 @@ private:
 public:
 	Body<float>* body;
 	Inventory inventory;
-	Usable<>* item;
+	Usable<>* item{ nullptr };
 	InputMap input{};
+
+	Inventory craftingBuffer;
+	std::queue<CraftCommand> craftingQueue;
 
 	Player(const char* playerID);
 	~Player();
@@ -23,4 +28,7 @@ public:
 	void switchHotbarSlot(int slot);
 	void setItem(ItemType type);
 	void initializeHand();
+	
+	void updateCrafting();
+	void craft(int recipeID);
 };

@@ -26,10 +26,9 @@ void initGame() {
 
 	//single threaded version 
 
-
 	RenderStateObject RenderState{};
 	Game game{};
-	
+
 	game.addPlayer("me");
 	game.addPlayer("you");
 	game.lockCamera("me");
@@ -47,6 +46,12 @@ void initGame() {
 
 	float time = static_cast<float>(glfwGetTime()); //in seconds
 
+	glfwSetWindowUserPointer(window, &game);
+	//input for chat and commands
+	glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int codepoint) {
+		Game* game = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
+		game->processChatInputCallback(codepoint);
+	});
 
 	////main game loop
 	while (!glfwWindowShouldClose(window)) {

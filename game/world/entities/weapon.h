@@ -98,12 +98,15 @@ public:
 };
 
 template <typename T = float> class Melee : public Usable<T> {
-private:
+protected:
 	std::unordered_map<const char*, bool> hitList{};
 	int damage;
 public:
-	Melee(Vector<T>& center) : Usable<T>{ center } {
+	Melee(Vector<T>& center, int dmg) : Usable<T>{ center }, damage{ dmg } {
 
+	}
+	void update(const Vector<float>& mouse, ChunkManager& map) override {
+		Usable<T>::update(mouse, map);
 	}
 	bool checkCollision() {
 
@@ -111,10 +114,10 @@ public:
 
 };
 
-template <typename T = float> class Pickaxe : public Usable<T> {
+template <typename T = float> class Pickaxe : public Melee<T> {
 private:
 public:
-	Pickaxe(Vector<T>& center) : Usable<T>{ center } {
+	Pickaxe(Vector<T>& center, int dmg) : Melee<T>{ center, dmg } {
 
 	}
 	bool use() override {
@@ -122,13 +125,13 @@ public:
 		return true;
 	}
 	void update(const Vector<float>& mouse, ChunkManager& map) override {
-		Usable<T>::update(mouse, map);
+		Melee<T>::update(mouse, map);
 
 		Chunk& chunk = map.vectorToChunk(mouse);
 		int loc = chunk.positionToLocation(mouse.x, mouse.y);
 
 		if (this->frame() == this->cooldown / 3 && loc != -1) {
-			chunk[2][loc].setTile(0);
+			chunk[2][loc].damage(this->damage);
 		}
 	}
 };
@@ -136,10 +139,10 @@ public:
 /**/
 
 template <typename T = float> Pickaxe<T>* pickaxeFactory(Vector<T>& center) {
-	int cooldown = 60;
-	int damage = 1;
+	int cooldown = 10;
+	int damage = 50;
 
-	Pickaxe<T>* pickaxe = new Pickaxe<>{center};
+	Pickaxe<T>* pickaxe = new Pickaxe<>{center, damage};
 	pickaxe->setAnimation("x", { {0.6f, 0}, {0.6f, cooldown / 3}, {0.6f, cooldown} });
 	pickaxe->setAnimation("y", { {0, 0}, {0, cooldown / 3}, {0, cooldown} });
 	pickaxe->setAnimation("angle", { {0, 0}, {1.3, cooldown / 3}, {0, cooldown} });

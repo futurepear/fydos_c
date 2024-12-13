@@ -15,9 +15,10 @@ ______________________
 
 class ChunkManager {
 private:
-	std::unordered_map<Vector<int>, Chunk, Vector<int>::hasher> chunks{};
+	
 	Chunk invalid{ 0, 0 };
 public:
+	std::unordered_map<Vector<int>, Chunk, Vector<int>::hasher> chunks{};
 	ChunkManager(){
 		createChunk({ 0, 0 });
 		createChunk({ 0, -1 });
@@ -28,7 +29,7 @@ public:
 
 	}
 	void createChunk(Vector<int> location) {
-		chunks[location] = Chunk{ location.x * Constants::chunkSize, location.y * Constants::chunkSize };
+		chunks[location] = Chunk{ location.x * Constants::chunkWidth, location.y * Constants::chunkWidth };
 	}
 	void printActive() {
 		for (const auto& [key, value] : chunks) {
@@ -46,8 +47,8 @@ public:
 		return getChunk(index);
 	}
 	template <typename T> Vector<int> chunkSpace(const Vector<T>& vector) const {
-		T x = vector.x / (Constants::chunkSize);
-		T y = vector.y / (Constants::chunkSize);
+		T x = vector.x / (Constants::chunkWidth);
+		T y = vector.y / (Constants::chunkWidth);
 		return Vector<int>{ (int)std::floor(x), (int)std::floor(y) };
 	}
 	template <typename T> Chunk& vectorToChunk(const Vector<T>& vector) {
