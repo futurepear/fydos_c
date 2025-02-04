@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <utility>
 #include "../chunkManager.h"
+#include "../../systems/dictionary.h"
 #include "../../systems/animation.hpp"
 #include "../../physics/physics.h"
 
@@ -66,11 +67,11 @@ public:
 		return pos;
 	}
 	T angle() {
-		return -m_angle.value() + m_pivotAngle + 3.14 / 2;
+		return -m_angle.value() + m_pivotAngle + 3.14f / 2.0f;
 	}
 
 	void setAnimation(const char* property, const AnimationDiscrete<T>& animation) {
-		AnimationDiscrete<T>* target;
+		AnimationDiscrete<T>* target = nullptr;
 
 		if (property == "x")
 			target = &m_x;
@@ -126,27 +127,18 @@ public:
 	}
 	void update(const Vector<float>& mouse, ChunkManager& map) override {
 		Melee<T>::update(mouse, map);
-
+		
 		Chunk& chunk = map.vectorToChunk(mouse);
 		int loc = chunk.positionToLocation(mouse.x, mouse.y);
 
 		if (this->frame() == this->cooldown / 3 && loc != -1) {
-			chunk[2][loc].damage(this->damage);
+			chunk[2][loc]->damage(this->damage);
 		}
 	}
 };
 
 /**/
 
-template <typename T = float> Pickaxe<T>* pickaxeFactory(Vector<T>& center) {
-	int cooldown = 10;
-	int damage = 50;
+Pickaxe<float>* pickaxeFactory(int cooldown, int damage, Vector<float>& center);
 
-	Pickaxe<T>* pickaxe = new Pickaxe<>{center, damage};
-	pickaxe->setAnimation("x", { {0.6f, 0}, {0.6f, cooldown / 3}, {0.6f, cooldown} });
-	pickaxe->setAnimation("y", { {0, 0}, {0, cooldown / 3}, {0, cooldown} });
-	pickaxe->setAnimation("angle", { {0, 0}, {1.3, cooldown / 3}, {0, cooldown} });
-
-	return pickaxe;
-}
-
+Usable<float>* weaponFactory(int weaponID, Vector<float>& center);

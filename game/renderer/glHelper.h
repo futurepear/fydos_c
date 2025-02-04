@@ -13,7 +13,7 @@ struct AttributeBuffer {
     unsigned int color = 0;
     unsigned int texture = 0;
     unsigned int VBO = 0;
-    unsigned int elements = 0;
+    unsigned int GUIElements = 0;
     int size = 0;
     int indexSize = 0;
 };
@@ -109,7 +109,7 @@ std::string readFile(std::string path);
 //TODO: combine position/textures/color etc..
 GLuint positionVAO(float vertices[], int size);
 GLuint colorsVAO(float vertices[], int size);
-GLuint elementsVAO(float vertices[], int size, unsigned int indices[], int sizeI);
+GLuint GUIElementsVAO(float vertices[], int size, unsigned int indices[], int sizeI);
 void createPositionBuffers(AttributeBuffer& buf, float vertices[], int size);
 
 //use only for lighting layers

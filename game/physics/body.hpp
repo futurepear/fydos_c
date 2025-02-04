@@ -55,6 +55,7 @@ public:
 	void move(const Vector<T>& displacement);
 	void rotate(T angle);
 	void applyForce(Vector<T>& appliedForce);
+	void applyFriction(T mu);
 	void makeCircle();
 	Vector<T>* getTransformedVertices();
 	bool isCircle();
@@ -163,7 +164,7 @@ template <typename T> void Body<T>::setVertices(Vector<T>* verts, int length) {
 	transformedVertices = new Vector<T>[verticesLength];
 	transformUpdateRequired = true;
 }
-
+	
 template <typename T> void Body<T>::setPosition(T x, T y) {
 	position.x = x;
 	position.y = y;
@@ -171,6 +172,12 @@ template <typename T> void Body<T>::setPosition(T x, T y) {
 
 template <typename T> void Body<T>::applyForce(Vector<T>& appliedForce) {
 	force += appliedForce;
+}
+
+template <typename T> void Body<T>::applyFriction(T mu) {
+	Vector<T> dir = -velocity / velocity.length();
+	T f = mu * mass * 10;
+
 }
 
 template <typename T> void Body<T>::move(const Vector<T>& displacement) {

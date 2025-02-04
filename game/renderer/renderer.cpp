@@ -8,11 +8,12 @@
 #include <assert.h>
 #include "glHelper.h"
 #include "renderer.h"
+#include "gui/renderer.h"
 #include "../game.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	//RenderState.resolutionChange = true;
+	GUI::resolutionChange = true;
 	glViewport(0, 0, width, height);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClearDepth(1.0);
@@ -22,7 +23,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_MULTISAMPLE);
-	
 }
 
 void screenDimensions(GLFWwindow* window, float& width, float& height) {
@@ -73,6 +73,17 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 	screenDimensions(window, dimensions[0], dimensions[1]);
 	float scale = game.getScale() * 100.0f;
 	float now = static_cast<float>(glfwGetTime());
+
+	RenderState.width = (int)dimensions[0];
+	RenderState.height = (int)dimensions[1];
+
+	if (GUI::resolutionChange) {
+		GUI::root.setWidth(RenderState.width, 'p');
+		GUI::root.setHeight(RenderState.height, 'p');
+		GUI::root.offsetWidth = RenderState.width;
+		GUI::root.offsetHeight = RenderState.height;
+		GUI::compute(&GUI::root);
+	}
 	game.updateScreenSize(dimensions[0], dimensions[1]);
 
 	//global uniforms
@@ -81,17 +92,17 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 
 	glBindBuffer(GL_UNIFORM_BUFFER, RenderState.uniformData);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float) * 12, &perspective);
-	if (RenderState.resolutionChange) {
+	if (GUI::resolutionChange) {
 		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 12, sizeof(float) * 2, &dimensions);
-		//RenderState.resolutionChange = false;
+		GUI::resolutionChange = false;
 	}
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(float) * 14, sizeof(float) * 1, &now); //optimization: move to program that only need this
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//end setting static sutff or whatever
 
-	RenderState.shader("default");
-	unsigned int colorLoc = glGetUniformLocation(RenderState.programs["default"], "color");
+	RenderState.shader("tile");
+	unsigned int tileColorLoc = glGetUniformLocation(RenderState.programs["default"], "color");
 	
 
 	//tiles
@@ -103,19 +114,19 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 
 			for (int layer = 0; layer < 4; layer++) {
 				for (int i = 0; i < Chunk::chunkLength; i++) {
-					if (chunk[layer][i].isAir()) continue;
+					if (chunk[layer][i]->isAir()) continue;
 					float color[]{ 1.0, 1.0, 0.0, 1.0 };
-					const BlockData& data = chunk[layer][i].getData();
+					const BlockData& data = chunk[layer][i]->getData();
 					color[0] = data.color.r / 255.0f;
 					color[1] = data.color.g / 255.0f;
 					color[2] = data.color.b / 255.0f;
 
-					tilePosition.set(chunk.leftBorder() + chunk[layer][i].x() + 0.5f,
-						chunk.topBorder() + chunk[layer][i].y() + 0.5f, -chunk[layer][i].getRotation(), 1.0f, 1.0f);
+					tilePosition.set(chunk.leftBorder() + chunk[layer][i]->x() + 0.5f,
+						chunk.topBorder() + chunk[layer][i]->y() + 0.5f, chunk[layer][i]->getRotation(), 1.0f, 1.0f);
 					RenderState.setTransform(tilePosition);
 
-					int type = chunk[layer][i].geometryType();
-					glUniform4fv(colorLoc, 1, color);
+					int type = chunk[layer][i]->geometryType();
+					glUniform4fv(tileColorLoc, 1, color);
 					//RenderState.basicGeometry[type].start, RenderState.basicGeometry[type].length
 					DrawArraysIndirectCommand* cmd = new DrawArraysIndirectCommand{ (unsigned int)RenderState.basicGeometry[type].length, 1, (unsigned int)RenderState.basicGeometry[type].start, 0 };
 					//glDrawArraysIndirect(GL_TRIANGLES, cmd);
@@ -127,6 +138,9 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 
 		}
 	}
+
+	RenderState.shader("default");
+	unsigned int colorLoc = glGetUniformLocation(RenderState.programs["default"], "color");
 
 	//players
 	{
@@ -176,6 +190,7 @@ void renderer::render(Game& game, RenderStateObject& RenderState, GLFWwindow* wi
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, RenderState.geometry["box2"].size);
 	}
 
+	renderGUI(game, RenderState);
 
 	glfwSwapBuffers(window);
 }
@@ -244,6 +259,9 @@ void initGeometry(RenderStateObject& RenderState) {
 
 void renderer::setupRenderer(RenderStateObject& RenderState) {
 	RenderState.createProgram("default", "../data/shaders/default.vert", "../data/shaders/default.frag");
+	RenderState.createProgram("gui", "../data/shaders/guiBasic.vert", "../data/shaders/guiBasic.frag");
+	RenderState.createProgram("text", "../data/shaders/text.vert", "../data/shaders/text.frag");
+	RenderState.createProgram("tile", "../data/shaders/tile.vert", "../data/shaders/tile.frag");
 
 	//perspective matrix - resolution vec2 - current time uniforms
 	unsigned int uboInfo;
@@ -257,6 +275,8 @@ void renderer::setupRenderer(RenderStateObject& RenderState) {
 	RenderState.uniformData = uboInfo;
 
 	initGeometry(RenderState);
+
+	loadTexture(RenderState, "../data/fonts/firasans.png", "font-serif");
 }
 
 void renderer::createRenderer(GLFWwindow* window) {

@@ -1,34 +1,39 @@
 #pragma once
-#include "../../physics/physics.h"
-#include "../../systems/inventory.h"
+#include "entity.h"
 #include "../../input/inputMap.h"
 #include "../../systems/crafting.h"
+#include "controllers.h"
 #include "weapon.h"
 #include <queue>
 
-class Player {
+class Player : public Entity {
 private:
 	const char* id;
+	int activeItem = 0; 
+	float interactionDistance = 3.0f; 
+	Controller* controller; 
 public:
-	Body<float>* body;
-	Inventory inventory;
-	Usable<>* item{ nullptr };
-	InputMap input{};
+	Inventory inventory{ 100 };
+	Usable<>* item{ nullptr }; 
+	InputMap input{}; 
 
-	Inventory craftingBuffer;
-	std::queue<CraftCommand> craftingQueue;
+	ItemStorage craftingBuffer; 
+	Crafter crafter;
 
 	Player(const char* playerID);
 	~Player();
-	Vector<float>& position();
+	
+	void applyInput(InputMap& input); 
 	void update();
 	float facing();
-	void addInput(InputMap i);
-	const Vector<float> mouse();
-	void switchHotbarSlot(int slot);
-	void setItem(ItemType type);
-	void initializeHand();
+	void addInput(InputMap i); 
+	bool canInteract(const Vector<float> pos);
+	const Vector<float> mouse(); 
+	void setItem(int itemID); 
+	void initializeHand(); 
+	void changeActiveItem(int activeItem);
 	
-	void updateCrafting();
-	void craft(int recipeID);
+	void craft(int recipeID); 
+	void checkCursorDistance(); 
+	void applyStorageInputs(InputMap& input);
 };

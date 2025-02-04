@@ -6,12 +6,10 @@
 #include <sstream>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 #include "glhelper.h"
 #include "util/glmath.h"
-
 #include <cmath>
-
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 
@@ -61,7 +59,7 @@ void loadTexture(RenderStateObject& RenderState, const char* location, const cha
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
     if (data) {
@@ -69,7 +67,7 @@ void loadTexture(RenderStateObject& RenderState, const char* location, const cha
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
-        std::cout << "Failed to load texture" << std::endl;
+        std::cerr << "Failed to load image: " << stbi_failure_reason() << "\n";
     }
 
     RenderState.textures[name] = Texture{ width, height, texture };
@@ -111,7 +109,7 @@ void createPositionBuffers(AttributeBuffer& buf, float vertices[], int size) {
 }
 
 //TODO: find way to reduce all this repetitive buffer making
-GLuint elementsVAO(float vertices[], int size, unsigned int indices[], int sizeI) {
+GLuint GUIElementsVAO(float vertices[], int size, unsigned int indices[], int sizeI) {
     GLuint VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

@@ -6,13 +6,23 @@
 #include "input/inputMap.h"
 #include "world/chunk.h"
 #include <GLFW/glfw3.h>
-#include "input/inputMap.h"
+#include "input/processInput.h"
 #include "world/chunkManager.h"
 #include <vector>
 #include <string>
+#include <set>
+#include "gui/events.h"
 
 void initGame();
 
+class Client {
+private:
+public:
+	std::set<ItemBuffer*> openStorages{};
+	Player* you = nullptr;
+	InputMap lastInput{};
+	InputMap input;
+};
 //only one of these should exist at a time 
 class Game {
 private:
@@ -26,15 +36,14 @@ private:
 	
 	Player* cameraTarget = nullptr;
 	Player* you = nullptr;
-	InputMap localInput{};
-	std::string chatBuffer{};
+	Client client{};
 
-	void tileNarrowPhase(Player* entity, Tile& tile, Chunk& parentChunk);
-	void tileBroadPhaseInner(Player* entity, Chunk& chunk);
+	void tileNarrowPhase(Entity* entity, Tile* tile, Chunk& parentChunk);
+	void tileBroadPhaseInner(Entity* entity, Chunk& chunk);
 public:
+	InputBuffer inputBuffer{};
 	std::unordered_map<const char*, Player*> players;
-
-	std::vector<Vector<int>> debug{};
+	std::vector<Entity*> entities{};
 
 	ChunkManager chunks{};
 
@@ -59,15 +68,17 @@ public:
 	float cameraY();
 	void updateScreenSize(float x, float y);
 	Player* addPlayer(const char* id);
+	Entity* addEntity(Entity* entity);
 	void lockCamera(const char* id);
 	void setYou(const char* id);
 	bool placeBlock(Player* entity, Vector<float> mouse);
 	
-	void tileBroadPhase(Player* entity);
+	void tileBroadPhase(Entity* entity);
 	void updateChunk(Chunk& chunk, float time);
 	void updateChunks(float time);
 	void update(float time);
+	void updateClient(float time);
+	void applyStorageInputs(Player* player, InputMap& input);
 	void applyInput(Player* player, InputMap& input);
 	void processLocalInput(GLFWwindow* window);
-	void processChatInputCallback(unsigned int codepoint);
 };

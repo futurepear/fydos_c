@@ -10,6 +10,11 @@ namespace collisions {
 	template <typename T> void projectVertices(Vector<T>* vertices, int size, Vector<T>& axis, T& min, T& max);
 	template <typename T> int circleClosestPolygonPoint(Vector<T>& center, Vector<T>* vertices, int size);
 	template <typename T> void projectCircle(Vector<T>& center, T radius, Vector<T> axis, T& min, T& max);
+	template <typename T> bool intersectRect(Vector<T> rectPos, Vector<T> rectDims, Vector<T> point);
+}
+
+template <typename T> bool collisions::intersectRect(Vector<T> rectPos, Vector<T> rectDims, Vector<T> point) {
+	return (rectPos.x < point.x && point.x < rectPos.x + rectDims.x) && (rectPos.y < point.y && point.y < rectPos.y + rectDims.y);
 }
 
 template <typename T> bool collisions::intersectCircles(Body<T>& body1, Body<T>& body2, Vector<T>& normal, T& depth) {

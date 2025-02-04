@@ -1,0 +1,31 @@
+*{
+    font-family: Roboto;
+}
+body{
+    padding-left: 40px;
+    padding-right: 40px;
+}
+.row{
+    display: flex;
+    gap: 10px;
+}
+.row p{
+    margin: 0;
+    padding: 0;
+    width: 50px;
+}
+#autocompleter{
+    position: absolute;
+    background: #EEE;
+    padding: 5px;
+    color: blue;
+    font-size: 0.8em;
+    font-weight: 800;
+}
+#autocompleter p{
+    padding: 0;
+    margin: 0;
+}
+#autocompleter p:first-child{
+    color: red;
+}

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fydos Engine Development Page</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="../index.css">
+</head>
+<body>
+    <h2>Item Editor</h2>
+    <!--<button onclick="importData()">Import</button>-->
+    <button onclick="exportData()">Export</button>
+    <button>Items</button>
+    <button>Blocks</button>
+    <div id="autocompleter"></div>
+    <hr />
+    <div id="list" style="display: flex; flex-direction: column;">
+
+    </div>
+    <button onclick="plus()">+</button>
+    <p id="output">OUTPUT EMPTY</p>
+    <script>
+
+        let items = [];
+        let blocks = [];
+
+        function searchForNames(text, target) {
+            let results = [];
+            for (let i in target) {
+                let found = target[i][1].match(text, "gi");
+                if (found) {
+                    results.push([target[i][1], target[i][0]]);
+                }
+            }
+            Editor.firstAutocomplete = (results[0] ?? ["", ""])[1];
+            return results;
+        }
+        function $(x) {
+            return document.getGUIElementById(x);
+        }
+        async function load() {
+            let res = await fetch("http://localhost:3000/dictionary.cpp", {
+                headers: {}
+            });
+            res = await res.text();
+            let itemsRaw = res.split("//__ITEMSTART__")[1].split("//__ITEMEND__")[0];
+            let blocksRaw = res.split("//__BLOCKSTART__")[1].split("//__BLOCKEND__")[0];
+            parseData(itemsRaw, items, /ItemType::\S*/);
+            parseData(blocksRaw, blocks, /BlockType::\S*/);
+
+            //for (let i in items)
+            //    addItem(items[i]);
+            for (let i in blocks)
+                addBlock(blocks[i]);
+        }
+        load();
+
+        var Editor = {
+            row: 0,
+            col: 0,
+            firstAutocomplete: ""
+        }
+        document.addEventListener("click", (e) => {
+            let row = e.target.getAttribute("row");
+            let col = e.target.getAttribute("col");
+            if (row == null || col == null) return;
+            Editor.row = parseInt(row);
+            Editor.col = parseInt(col);
+        });
+
+        function setAutocompleter(text, elem) {
+            $("autocompleter").innerHTML = "";
+            for (let i in text)
+                $("autocompleter").innerHTML += `<p>${text[i][0]}</p>`;
+            $("autocompleter").style.top = elem.offsetTop + elem.offsetHeight + "px";
+            $("autocompleter").style.left = elem.offsetLeft + "px";
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key == "Tab") {
+                e.preventDefault();
+                if (Editor.firstAutocomplete != "") {
+                    let elem = e.target;
+                    elem.value = Editor.firstAutocomplete;
+                }
+            }
+            if (e.key == "ArrowDown" || e.key == "Enter") {
+                let elem = document.querySelector(`input[row="${Editor.row + 1}"][col="${Editor.col}"]`);
+                if (elem != null) {
+                    Editor.row++;
+                    elem.focus();
+                    setAutocompleter("", elem);
+                }
+            }
+            if (e.key == "ArrowUp") {
+                let elem = document.querySelector(`input[row="${Editor.row - 1}"][col="${Editor.col}"]`);
+                if (elem != null) {
+                    Editor.row--;
+                    elem.focus();
+                    setAutocompleter("", elem);
+                }
+            }
+
+            //auto complete
+
+
+            if (e.key.length != 1) return;
+            let elem = document.querySelector(`input[row="${Editor.row}"][col="${Editor.col}"]`);
+            let res = searchForNames(elem.value + e.key, blocks);
+            setAutocompleter(res, elem);
+        });
+
+        function addItem(item) {
+            let id = item[0];
+            document.getGUIElementById("list").innerHTML += `
+                                <div class="row" row=${id}>
+                                    <p>${item[0]}</p>
+                                    <input value="${item[1]}" row=${id} col=${0}></input>
+                                    <input value="${item[2]}" row=${id} col=${1}></input>
+                                    <input value="${item[3]}" row=${id} col=${2}></input>
+                                    <input value="${item[4] ?? ""}" row=${id} col=${3}></input>
+                                </div>
+                                `;
+        }
+        function addBlock(block) {
+            let id = block[0];
+            let rgb = block[2];
+            document.getGUIElementById("list").innerHTML += `
+                    <div class="row" row=${id}>
+                        <p>${block[0]}</p>
+                        <input value="${block[1]}" row=${id} col=${0}></input>
+                        <input type="color" value="rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})" row=${id} col=${1}></input>
+                        <input value="${block[3]}" row=${id} col=${2}></input>
+                        <input value="${block[4]}" row=${id} col=${3}></input>
+                    </div>
+                    `;
+        }
+        function plus() {
+
+
+            return;
+            items.push([items.length, "Name", 0, "RESOURCE", ""]);
+            addItem(items[items.length - 1]);
+        }
+        function parseData(text, target, reg) {
+            text = text.replaceAll("{", " [ ").replaceAll("}", " ] ").replaceAll(",", " , ");
+
+            while (true) {
+
+                let found = text.match(reg);
+                if (found == null) break;
+                text = text.replace(reg, `"` + found[0].split("::")[1] + `"`);
+            }
+            text = text.trim();
+            text = "[" + text + "]";
+            text = text.replaceAll("\n", "").replaceAll("\r", "").replaceAll(",]", "]");
+            result = JSON.parse(text);
+            for (let i in result)
+                target.push(result[i]);
+        }
+        //C++ struct data parser
+
+        function importData() {
+            let text = prompt("Enter data");
+            //text = text.replaceAll(`"`, "").replaceAll(`{`, "").replaceAll("\n", "").replaceAll("\r", "").replaceAll(" ", "").trim();
+            parseData(text);
+        }
+        function exportData() {
+            let output = "";
+            document.getGUIElementById("output").innerHTML = "";
+            for (let i in items) {
+                let a = items[i];
+                let ext = "";
+                if (a[4] != "" && a[4] != undefined)
+                    ext = `, ${a[4]}`
+                let line = `\t{${a[0]}, "${a[1]}", ${a[2]}, ItemType::${a[3]}${ext}},\r\n`;
+                output += line;
+                document.getGUIElementById("output").innerHTML += `<q>${line}</q>`;
+            }
+            navigator.clipboard.writeText(output);
+
+            fetch("http://localhost:3000/dictionary.cpp", {
+                method: "POST",
+                body: output
+            });
+        }
+        async function getFile() {
+            const root = await navigator.storage.getDirectory();
+            console.log(root);
+        }
+    </script>
+</body>
+</html>

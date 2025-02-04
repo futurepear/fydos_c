@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fydos Engine Development Page</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="./index.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <style>
+    </style>
+</head>
+<body>
+    <canvas id="canvas" style="border: 1px solid black; image-rendering: pixelated; image-rendering: crisp-edges; "></canvas>
+    
+    <script>
+
+        function getKerningAdjustment(c1, c2) {
+            const pairWidth = ctx.measureText(c1 + c2).width;
+            const char1Width = ctx.measureText(c1).width;
+            const char2Width = ctx.measureText(c2).width;
+            const kerningAdjustment = pairWidth - (char1Width + char2Width);
+            return kerningAdjustment;
+        }
+
+        function clamp(x, min, max) {
+            return Math.min(Math.max(min, x), max);
+        }
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext('2d');
+        ctx.font = 48 + "px fira sans";
+        ctx.fillText("aaaa", 40, 0);
+        setTimeout(stuff, 500);
+        let res = ``;
+        function stuff() {
+            
+
+
+            let scaler = 2;
+            canvas.width = 512 * scaler;
+            canvas.height = 512 * scaler;
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 1;
+            const lock = true;
+
+            //every char to render - BTW I missed like 3 chars here til i realized I should have just turned the range of ints [32-126] into chars 
+            let str = ` !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`;
+
+            
+
+            function font(scale) {
+                ctx.font = scale * 48 + "px fira sans";
+                ctx.fillText('', -100, -100);
+            }
+
+            font(1);
+            ctx.fontKerning = "none";
+
+            let g_tm = ctx.measureText(str);
+            let padding = 6;//6
+            let x = 0;
+            let dy = g_tm.fontBoundingBoxAscent + g_tm.actualBoundingBoxDescent + padding;
+            let y = dy - padding;
+            let c = 0;
+            let colors = ["red", "blue"];
+
+            
+            
+
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "black";
+            //ctx.fillText("mjijrstuAVA TA  fasdjahfafsahj ", 200, 950);
+            //ctx.fillRect(100, 800, -10, -100);
+            let boxes = [];
+
+            for (let i in str) {
+                x += 2;
+                c++;
+                ctx.fillStyle = colors[c % 2];
+
+                let tm = ctx.measureText(str[i]);
+                x -= tm.actualBoundingBoxLeft;
+                let w = tm.width; // tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft;
+                if (x + w + padding > 512) {
+                    x = padding - tm.actualBoundingBoxLeft;
+                    y += dy;
+                }
+
+                let box = {
+                    x: Math.round(x + tm.actualBoundingBoxLeft) - padding,
+                    y: Math.round(y - tm.fontBoundingBoxAscent),
+                    w: Math.round(tm.width) + padding * 2, //Math.round(w),
+                    h: Math.round(tm.fontBoundingBoxAscent + tm.actualBoundingBoxDescent) + padding,
+                    baseline: Math.round(y),
+                    pre: Math.round(tm.actualBoundingBoxLeft),
+                    advance: Math.round(tm.actualBoundingBoxRight)
+                }
+                ctx.fillStyle = "white";
+
+                ctx.strokeStyle = "red";
+                ctx.strokeRect(box.x * scaler, box.y * scaler, box.w * scaler, box.h * scaler);
+                ctx.strokeStyle = "#FF8888";
+                //ctx.strokeRect(box.x * scaler, box.y * scaler, (tm.actualBoundingBoxRight + tm.actualBoundingBoxLeft) * scaler, box.h * scaler);
+                ctx.strokeStyle = "green";
+                //ctx.strokeRect(x * scaler + tm.actualBoundingBoxLeft*scaler, box.y * scaler, 1, box.h * scaler);
+                //ctx.strokeStyle = "blue";
+                //ctx.strokeRect(x * scaler, box.y * scaler, 1, box.h * scaler);
+
+                ctx.strokeStyle = "#8888FF";
+                //ctx.strokeRect(x * scaler + tm.actualBoundingBoxRight * scaler, box.y * scaler, 1, box.h * scaler);
+
+                ctx.fillStyle = "black";
+                font(scaler);
+                ctx.fillText(str[i], scaler * (x + tm.actualBoundingBoxLeft), scaler * y);
+                font(1);
+                boxes.push(box);
+                res += `{${box.x}, ${box.y}, ${box.w}, ${box.h}, ${box.baseline}, ${box.pre}, ${box.advance}},  // ${str[i]} \r\n`;
+                x += box.w;// + Math.abs(tm.actualBoundingBoxLeft);
+            }
+
+            
+
+            const imgdat = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const arr = new Uint8ClampedArray(4 * canvas.width * canvas.height);
+            //{
+            for (let i = 0; i < imgdat.data.length; i += 4) {
+                if (lock) break;
+                let d = imgdat.data;
+                d[i + 0] = 127 - 1 * Math.floor(d[i] / 1); // d[i];// 255*Math.round(d[i]/255); // R value
+                d[i + 1] = 0; // G value
+                d[i + 2] = 0; // B value
+                //d[i + 3] = 255; // A value
+            }
+
+            function getPixel(box, i) {
+                return scaler * box.x + scaler * box.y * canvas.width + i % (scaler * box.w) + Math.floor(i / (box.w * scaler)) * canvas.width;
+            }
+
+            let testCount = 0;
+            for (let box of boxes) {
+                if (lock) break;
+                //testCount++; if (testCount > 2) break;
+                let length = box.w * box.h * scaler * scaler;
+                for (let i = 0; i < length; i++) {
+                    let p = getPixel(box, i);
+                    //imgdat.data[p * 4 + 1] = 100;
+                    let dist = 1000;
+                    for (let j = 0; j < length; j++) {
+                        let p2 = getPixel(box, j);
+                        if (imgdat.data[p2 * 4] == imgdat.data[p * 4]) continue;
+                        //if (imgdat.data[p2 * 4] == 0) continue;
+
+                        let x1 = p % canvas.width;
+                        let y1 = Math.floor(p / (canvas.width));
+                        let x2 = p2 % canvas.width;
+                        let y2 = Math.floor(p2 / canvas.width);
+                        let dist2 = Math.hypot(x2 - x1, y2 - y1);
+                        if (imgdat.data[p2 * 4] != 0 || imgdat.data[p2 * 4] != 127)
+                            dist2 += Math.sign(imgdat.data[p * 4] - 2) * imgdat.data[p2 * 4] / 127;
+
+                        if (dist2 < dist)
+                            dist = dist2;
+                    }
+                    if (imgdat.data[p * 4] == 0) {
+                        arr[p * 4] = Math.floor(-255 / (padding * scaler) * (dist) + 255);
+                    } else {
+                        arr[p * 4] = Math.floor(-255 / (padding * scaler) * (dist - 1) + 255);
+                    }
+
+                }
+                console.log("/95 done one");
+            }
+
+            //for (let i = 0; i < imgdat.data.length; i += 4) {
+            //    if (imgdat.data[i] == 0) continue;
+            //    let closest = bfs(i);
+            //    let x1 = Math.floor(i / 4) % canvas.width;
+            //    let y1 = Math.floor(i / (4 * canvas.width));
+            //    let x2 = Math.floor(closest / 4) % canvas.width;
+            //    let y2 = Math.floor(closest / (4 * canvas.width));
+
+            //    let dist = Math.hypot(x2 - x1, y2 - y1);
+            //    dist = Math.abs(x2 - x1);
+            //    arr[i] = clamp(dist * 60, 0, 255);
+            //}
+            for (let i = 0; i < imgdat.data.length; i += 4) {
+                if (lock) break;
+                let d = imgdat.data;
+                if (imgdat.data[i] == 127) {
+                    d[i + 0] = 127 + Math.floor((255 - arr[i]) / 2);
+                } else {
+                    d[i + 0] = Math.floor(arr[i] / 2);
+                }
+            }
+
+            if (!lock) {
+                ctx.imageSmoothingEnabled = true;
+                //ctx.putImageData(imgdat, 0, 0);
+
+                let o = new OffscreenCanvas(512 * scaler, 512 * scaler);
+                octx = o.getContext("2d");
+                octx.putImageData(imgdat, 0, 0);
+
+                canvas.width = 512;
+                canvas.height = 512;
+                ctx.drawImage(o, 0, 0, 512, 512);
+            }
+        }
+        function bfs(i) {
+            let queue = [];
+            let visited = {};
+
+            visited[i] = true;
+            queue.push(i);
+
+
+            while (queue.length != 0) {
+                let c = queue.shift();
+
+                if (imgdat.data[c] == 0) {
+                    return c;
+                }
+
+                let adj = [c + 4, c - 4];
+                for (let next of adj) {
+                    if (next < 0 || next > imgdat.data.length) continue;
+                    if (!visited[next]) {
+                        visited[next] = true;
+                        queue.push(next);
+                    }
+                }
+                
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -15,18 +15,23 @@ ______________________
 
 class ChunkManager {
 private:
-	
+	std::unordered_map<Vector<int>, Chunk, Vector<int>::hasher> chunks{};
 	Chunk invalid{ 0, 0 };
 public:
-	std::unordered_map<Vector<int>, Chunk, Vector<int>::hasher> chunks{};
+	
 	ChunkManager(){
-		createChunk({ 0, 0 });
+		/*createChunk({ 0, 0 });
 		createChunk({ 0, -1 });
-		createChunk({ -1, -1 });
+		createChunk({ -1, -1 }); 
 		createChunk({ -1, 0 });
 		createChunk({ -2, -2 });
-		createChunk({ -2, -1 });
+		createChunk({ -2, -1 });*/
 
+		for (int x = -5; x < 5; x++) {
+			for (int y = -5; y < 5; y++) {
+				createChunk({ x, y });
+			}
+		}
 	}
 	void createChunk(Vector<int> location) {
 		chunks[location] = Chunk{ location.x * Constants::chunkWidth, location.y * Constants::chunkWidth };

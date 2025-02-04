@@ -42,12 +42,12 @@ struct ItemData {
 	const char* consumes;*/
 };
 
-enum class BlockType {
-	EMPTY,
-	BIOME,
-	FLOOR,
-	TILE,
-	ROOF
+enum BlockType {
+	EMPTY = -1,
+	BIOME = 0,
+	FLOOR = 1,
+	TILE = 2,
+	ROOF = 3
 };
 
 struct BlockData {
@@ -56,7 +56,6 @@ struct BlockData {
 		int g;
 		int b;
 	};
-
 	int id;
 	const char* name;
 	Color color;
@@ -70,11 +69,37 @@ struct Recipe {
 		int id;
 		int amount;
 	};
-	
+	int id;
+	const char* processName;
 	std::vector<Pair> inputs;
 	std::vector<Pair> outputs;
 	int where;
 	float time;
+};
+
+enum class WeaponType {
+	PICKAXE,
+	SPEAR,
+	DAGGER,
+	SWORD,
+	BOW
+};
+
+struct WeaponData {
+	int id;
+	WeaponType type;
+	int damage;
+	int animationLength;
+	int cooldown;
+	int knockback;
+};
+
+struct CraftingAreaData {
+	const char* name;
+	bool automatic;
+	bool automaticFindRecipe;
+	float craftingSpeed;
+	std::vector<int> recipes;
 };
 
 class Dictionary {
@@ -82,6 +107,8 @@ public:
 	static Registry<BlockData> blocks;
 	static Registry<Recipe> recipes;
 	static Registry<ItemData> items;
+	static Registry<WeaponData> weapons;
+	static Registry<CraftingAreaData> crafters;
 };
 
 

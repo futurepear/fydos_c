@@ -1,12 +1,10 @@
 #pragma once
+#include "inputMap.h"
+#include "../gui/events.h"
 
-namespace input {
-	struct keyMap {
-		bool w;
-		bool a;
-		bool s;
-		bool d;
-	};
-	void processInput(GLFWwindow* window);
+namespace Input {
+	void processTextInput(InputBuffer& inputBuffer, unsigned int codepoint);
+	void processScrollInput(InputBuffer& inputBuffer, double scrollX, double scrollY);
+	void processInputTick(GLFWwindow* window, InputMap& input, InputMap& lastInput, MouseEvent& e, InputBuffer& inputBuffer);
 }
 

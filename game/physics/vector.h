@@ -82,7 +82,7 @@ public:
 	static T cross(Vector<T>& v1, Vector<T>& v2) {
 		return v1.x * v2.y - v1.y * v2.x;
 	}
-	static T distance(Vector<T>& v1, Vector<T>& v2) {
+	static T distance(const Vector<T>& v1, const Vector<T>& v2) {
 		return (v1 - v2).length();
 	}
 	static T distanceSquared(Vector<T>& v1, Vector<T>& v2) {
